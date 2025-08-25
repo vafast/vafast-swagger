@@ -11,14 +11,14 @@
 		"release": "npm run build && npm run test && npm publish --access public"
 	},
 	"peerDependencies": {
-		"tirne": ">= 1.3.0"
+		"vafast": ">= 0.1.12"
 	},
 	"devDependencies": {
 		"@types/bun": "1.1.14",
-		"tirne": "1.3.9-beta.12",
 		"eslint": "9.6.0",
 		"tsup": "^8.1.0",
-		"typescript": "^5.5.3"
+		"typescript": "^5.5.3",
+		"vafast": "^0.1.13"
 	},
 	"main": "./dist/cjs/index.js",
 	"module": "./dist/index.mjs",

@@ -1,12 +1,21 @@
-import { elysiajsTheme } from '@scalar/themes'
+// 移除 @scalar/themes 依赖，使用默认样式
+const defaultTheme = `
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f5f5f5;
+  }
+  #api-reference {
+    min-height: 100vh;
+  }
+`
 import type { OpenAPIV3 } from 'openapi-types'
 import type { ReferenceConfiguration } from '@scalar/types'
 
 export const ScalarRender = (
-    info: OpenAPIV3.InfoObject,
-    version: string,
-    config: ReferenceConfiguration,
-    cdn: string
+	info: OpenAPIV3.InfoObject,
+	version: string,
+	config: ReferenceConfiguration,
+	cdn: string
 ) => `<!doctype html>
 <html>
   <head>
@@ -29,7 +38,7 @@ export const ScalarRender = (
       }
     </style>
     <style>
-      ${config.customCss ?? elysiajsTheme}
+      ${config.customCss ?? defaultTheme}
     </style>
   </head>
   <body>
@@ -40,9 +49,9 @@ export const ScalarRender = (
     >
     </script>
     <script src="${
-        cdn
-            ? cdn
-            : `https://cdn.jsdelivr.net/npm/@scalar/api-reference@${version}/dist/browser/standalone.min.js`
-    }" crossorigin></script>
+		cdn
+			? cdn
+			: `https://cdn.jsdelivr.net/npm/@scalar/api-reference@${version}/dist/browser/standalone.min.js`
+	}" crossorigin></script>
   </body>
 </html>`

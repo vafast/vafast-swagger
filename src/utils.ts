@@ -1,12 +1,29 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { normalize } from 'pathe'
-import {
-	replaceSchemaType,
-	t,
-	type HTTPMethod,
-	type LocalHook
-} from '@huyooo/elysia'
+// 移除 Elysia 依赖，定义基本类型
+type HTTPMethod =
+	| 'GET'
+	| 'POST'
+	| 'PUT'
+	| 'DELETE'
+	| 'PATCH'
+	| 'OPTIONS'
+	| 'HEAD'
+	| 'TRACE'
+
+interface LocalHook {
+	type?: string
+	detail?: {
+		hide?: boolean
+	}
+}
+
+// 简单的类型替换函数
+const replaceSchemaType = (schema: any, options: any) => {
+	// 简化实现，返回原始 schema
+	return schema
+}
 
 import { Kind, type TSchema } from '@sinclair/typebox'
 import type { OpenAPIV3 } from 'openapi-types'

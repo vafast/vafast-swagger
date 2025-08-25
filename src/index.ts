@@ -1,19 +1,173 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-import { Elysia, type InternalRoute } from '@huyooo/elysia'
+import type { Middleware } from 'vafast'
 
-import { SwaggerUIRender } from './swagger'
-import { ScalarRender } from './scalar'
+// 简化的 OpenAPI 类型定义
+interface OpenAPIInfo {
+	title?: string
+	description?: string
+	version?: string
+}
 
-import { filterPaths, registerSchemaPath } from './utils'
+interface OpenAPITag {
+	name: string
+	description?: string
+}
 
-import type { OpenAPIV3 } from 'openapi-types'
-import type { ReferenceConfiguration } from '@scalar/types'
-import type { ElysiaSwaggerConfig } from './types'
+interface OpenAPISchema {
+	type: string
+	properties?: Record<string, any>
+	required?: string[]
+}
+
+interface OpenAPISecurityScheme {
+	type: string
+	scheme?: string
+	bearerFormat?: string
+	description?: string
+}
+
+interface OpenAPIComponents {
+	schemas?: Record<string, OpenAPISchema>
+	securitySchemes?: Record<string, OpenAPISecurityScheme>
+}
+
+interface OpenAPIDocumentation {
+	info?: OpenAPIInfo
+	tags?: OpenAPITag[]
+	components?: OpenAPIComponents
+	paths?: Record<string, any>
+}
+
+interface VafastSwaggerConfig<Path extends string = '/swagger'> {
+	provider?: 'scalar' | 'swagger-ui'
+	scalarVersion?: string
+	scalarCDN?: string
+	scalarConfig?: Record<string, any>
+	documentation?: OpenAPIDocumentation
+	version?: string
+	excludeStaticFile?: boolean
+	path?: Path
+	specPath?: string
+	exclude?: string | RegExp | (string | RegExp)[]
+	swaggerOptions?: Record<string, any>
+	theme?: string | { light: string; dark: string }
+	autoDarkMode?: boolean
+	excludeMethods?: string[]
+	excludeTags?: string[]
+}
 
 /**
- * Plugin for [elysia](https://github.com/elysiajs/elysia) that auto-generate Swagger page.
- *
- * @see https://github.com/elysiajs/elysia-swagger
+ * 简化的 Swagger UI 渲染函数
+ */
+const renderSwaggerUI = (
+	info: OpenAPIInfo,
+	version: string,
+	theme: string,
+	swaggerOptions: Record<string, any>,
+	autoDarkMode: boolean
+) => {
+	const title = info.title || 'API Documentation'
+	const description = info.description || 'API documentation'
+	const apiVersion = info.version || '1.0.0'
+
+	return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@${version}/swagger-ui.css" />
+    <style>
+        html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
+        *, *:before, *:after { box-sizing: inherit; }
+        body { margin:0; background: #fafafa; }
+        ${
+			autoDarkMode
+				? `
+        @media (prefers-color-scheme: dark) {
+            body { background: #1a1a1a; }
+        }
+        `
+				: ''
+		}
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@${version}/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@${version}/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            const ui = SwaggerUIBundle({
+                url: './json',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalone.presets.standalone],
+                plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+                layout: "StandaloneLayout",
+                ${Object.entries(swaggerOptions)
+					.map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
+					.join(',\n                ')}
+            });
+        };
+    </script>
+</body>
+</html>`
+}
+
+/**
+ * 简化的 Scalar 渲染函数
+ */
+const renderScalar = (
+	info: OpenAPIInfo,
+	version: string,
+	config: Record<string, any>,
+	cdn: string
+) => {
+	const title = info.title || 'API Documentation'
+	const description = info.description || 'API documentation'
+
+	return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style>
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        #api-reference { min-height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="api-reference" data-url="./json" data-configuration='${JSON.stringify(
+		config
+	)}'></div>
+    <script src="${
+		cdn ||
+		`https://cdn.jsdelivr.net/npm/@scalar/api-reference@${version}/dist/browser/standalone.min.js`
+	}" crossorigin></script>
+</body>
+</html>`
+}
+
+/**
+ * 创建 OpenAPI 规范
+ */
+const createOpenAPISpec = (documentation: OpenAPIDocumentation) => {
+	return {
+		openapi: '3.0.3',
+		info: {
+			title: documentation.info?.title || 'Vafast API',
+			description: documentation.info?.description || 'API documentation',
+			version: documentation.info?.version || '1.0.0'
+		},
+		paths: documentation.paths || {},
+		components: documentation.components || {},
+		tags: documentation.tags || []
+	}
+}
+
+/**
+ * Vafast Swagger 中间件
  */
 export const swagger = <Path extends string = '/swagger'>({
 	provider = 'scalar',
@@ -21,7 +175,7 @@ export const swagger = <Path extends string = '/swagger'>({
 	scalarCDN = '',
 	scalarConfig = {},
 	documentation = {},
-	version = '5.9.0',
+	version = '4.18.2',
 	excludeStaticFile = true,
 	path = '/swagger' as Path,
 	specPath = `${path}/json`,
@@ -31,161 +185,55 @@ export const swagger = <Path extends string = '/swagger'>({
 	autoDarkMode = true,
 	excludeMethods = ['OPTIONS'],
 	excludeTags = []
-}: ElysiaSwaggerConfig<Path> = {}) => {
-	const schema = {}
-	let totalRoutes = 0
+}: VafastSwaggerConfig<Path> = {}) => {
+	// 返回 vafast 中间件
+	return (req: Request, next: () => Promise<Response>): Promise<Response> => {
+		const url = new URL(req.url)
 
-	if (!version)
-		version = `https://unpkg.com/swagger-ui-dist@${version}/swagger-ui.css`
+		// 处理 Swagger UI 页面
+		if (url.pathname === path) {
+			const html =
+				provider === 'swagger-ui'
+					? renderSwaggerUI(
+							documentation.info || {},
+							version,
+							theme as string,
+							swaggerOptions,
+							autoDarkMode
+					  )
+					: renderScalar(
+							documentation.info || {},
+							scalarVersion,
+							scalarConfig,
+							scalarCDN
+					  )
 
-	const info = {
-		title: 'Elysia Documentation',
-		description: 'Development documentation',
-		version: '0.0.0',
-		...documentation.info
-	}
-
-	const relativePath = specPath.startsWith('/') ? specPath.slice(1) : specPath
-
-	const app = new Elysia({ name: '@huyooo/elysia-swagger' })
-
-	const page = new Response(
-		provider === 'swagger-ui'
-			? SwaggerUIRender(
-					info,
-					version,
-					theme,
-					JSON.stringify(
-						{
-							url: relativePath,
-							dom_id: '#swagger-ui',
-							...swaggerOptions
-						},
-						(_, value) =>
-							typeof value === 'function' ? undefined : value
-					),
-					autoDarkMode
-			  )
-			: ScalarRender(
-					info,
-					scalarVersion,
-					{
-						spec: {
-							url: relativePath,
-							...scalarConfig.spec
-						},
-						...scalarConfig,
-						// so we can showcase the elysia theme
-						// @ts-expect-error
-						_integration: 'elysiajs'
-					} satisfies ReferenceConfiguration,
-					scalarCDN
-			  ),
-		{
-			headers: {
-				'content-type': 'text/html; charset=utf8'
-			}
-		}
-	)
-
-	app.get(path, page, {
-		detail: {
-			hide: true
-		}
-	}).get(
-		specPath,
-		function openAPISchema() {
-			// @ts-expect-error Private property
-			const routes = app.getGlobalRoutes() as InternalRoute[]
-
-			if (routes.length !== totalRoutes) {
-				const ALLOWED_METHODS = [
-					'GET',
-					'PUT',
-					'POST',
-					'DELETE',
-					'OPTIONS',
-					'HEAD',
-					'PATCH',
-					'TRACE'
-				]
-				totalRoutes = routes.length
-
-				// forEach create a clone of a route (can't use for-of)
-				routes.forEach((route: InternalRoute) => {
-					if (route.hooks?.detail?.hide === true) return
-					if (excludeMethods.includes(route.method)) return
-					if (
-						ALLOWED_METHODS.includes(route.method) === false &&
-						route.method !== 'ALL'
-					)
-						return
-
-					if (route.method === 'ALL')
-						ALLOWED_METHODS.forEach((method) => {
-							registerSchemaPath({
-								schema,
-								hook: route.hooks,
-								method,
-								path: route.path,
-								// @ts-ignore
-								models: app.getGlobalDefinitions?.().type,
-								contentType: route.hooks.type
-							})
-						})
-					else
-						registerSchemaPath({
-							schema,
-							hook: route.hooks,
-							method: route.method,
-							path: route.path,
-							// @ts-ignore
-							models: app.getGlobalDefinitions?.().type,
-							contentType: route.hooks.type
-						})
+			return Promise.resolve(
+				new Response(html, {
+					headers: {
+						'content-type': 'text/html; charset=utf8'
+					}
 				})
-			}
-
-			return {
-				openapi: '3.0.3',
-				...{
-					...documentation,
-					tags: documentation.tags?.filter(
-						(tag) => !excludeTags?.includes(tag?.name)
-					),
-					info: {
-						title: 'Elysia Documentation',
-						description: 'Development documentation',
-						version: '0.0.0',
-						...documentation.info
-					}
-				},
-				paths: {
-					...filterPaths(schema, {
-						excludeStaticFile,
-						exclude: Array.isArray(exclude) ? exclude : [exclude]
-					}),
-					...documentation.paths
-				},
-				components: {
-					...documentation.components,
-					schemas: {
-						// @ts-ignore
-						...app.getGlobalDefinitions?.().type,
-						...documentation.components?.schemas
-					}
-				}
-			} satisfies OpenAPIV3.Document
-		},
-		{
-			detail: {
-				hide: true
-			}
+			)
 		}
-	)
 
-	return app
+		// 处理 OpenAPI 规范
+		if (url.pathname === specPath) {
+			const spec = createOpenAPISpec(documentation)
+
+			return Promise.resolve(
+				new Response(JSON.stringify(spec, null, 2), {
+					headers: {
+						'content-type': 'application/json'
+					}
+				})
+			)
+		}
+
+		// 继续处理其他请求
+		return next()
+	}
 }
 
-export type { ElysiaSwaggerConfig }
+export type { VafastSwaggerConfig }
 export default swagger
