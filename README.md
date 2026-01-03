@@ -1,73 +1,106 @@
-# @huyooo/elysia-swagger
-Plugin for [elysia](https://github.com/elysiajs/elysia) to auto-generate Swagger page.
+# @vafast/swagger
+
+Plugin for [Vafast](https://github.com/vafastjs/vafast) to auto-generate Swagger/OpenAPI documentation.
 
 ## Installation
+
 ```bash
-bun add @huyooo/elysia-swagger
+bun add @vafast/swagger
+# or
+npm install @vafast/swagger
 ```
 
 ## Example
-```typescript
-import { Elysia, t } from '@huyooo/elysia'
-import { swagger } from '@huyooo/elysia-swagger'
 
-const app = new Elysia()
-    .use(swagger())
-    .get('/', () => 'hi', { response: t.String({ description: 'sample description' }) })
-    .post(
-        '/json/:id',
-        ({ body, params: { id }, query: { name } }) => ({
-            ...body,
-            id,
-            name
-        }),
-        {
-            params: t.Object({
-                id: t.String()
-            }),
-            query: t.Object({
-                name: t.String()
-            }),
-            body: t.Object({
-                username: t.String(),
-                password: t.String()
-            }),
-            response: t.Object({
-                username: t.String(),
-                password: t.String(),
-                id: t.String(),
-                name: t.String()
-            }, { description: 'sample description' })
-        }
-    )
-    .listen(8080);
+```typescript
+import { Server, createHandler } from 'vafast'
+import { swagger } from '@vafast/swagger'
+
+// Create Swagger middleware
+const swaggerMiddleware = swagger({
+  provider: 'scalar',
+  documentation: {
+    info: {
+      title: 'Vafast API',
+      version: '1.0.0'
+    }
+  }
+})
+
+// Define routes
+const routes = [
+  {
+    method: 'GET',
+    path: '/',
+    handler: createHandler(() => {
+      return { message: 'Hello World' }
+    })
+  },
+  {
+    method: 'POST',
+    path: '/json/:id',
+    handler: createHandler(async (req: Request) => {
+      const body = await req.json()
+      const url = new URL(req.url)
+      const id = url.pathname.split('/').pop()
+      return { ...body, id }
+    })
+  }
+]
+
+// Create server
+const server = new Server(routes)
+
+// Apply Swagger middleware
+export default {
+  fetch: (req: Request) => {
+    return swaggerMiddleware(req, () => server.fetch(req))
+  }
+}
 ```
 
-Then go to `http://localhost:8080/swagger`.
+Then go to `http://localhost:3000/swagger`.
 
-# config
+## Configuration
 
-## provider
-@default 'scalar'
+### provider
+
+@default `'scalar'`
+
 Choose between [Scalar](https://github.com/scalar/scalar) & [SwaggerUI](https://github.com/swagger-api/swagger-ui)
 
-## scalar
-Customize scalarConfig, refers to [Scalar config](https://github.com/scalar/scalar/blob/main/documentation/configuration.md)
+### documentation
 
-## swagger
-Customize Swagger config, refers to [Swagger 3.0.3 config](https://swagger.io/specification/v3)
+Customize OpenAPI documentation, refers to [OpenAPI 3.0.3 spec](https://swagger.io/specification/v3)
 
-## path
-@default '/swagger'
+### scalarConfig
 
-The endpoint to expose Swagger
+Customize scalar configuration, refers to [Scalar config](https://github.com/scalar/scalar/blob/main/documentation/configuration.md)
 
-## excludeStaticFile
-@default true
+### path
+
+@default `'/swagger'`
+
+The endpoint to expose Swagger documentation
+
+### specPath
+
+@default `'/${path}/json'`
+
+The endpoint to expose OpenAPI JSON specification
+
+### excludeStaticFile
+
+@default `true`
 
 Determine if Swagger should exclude static files.
 
-## exclude
-@default []
+### exclude
+
+@default `[]`
 
 Paths to exclude from the Swagger endpoint
+
+## License
+
+MIT
