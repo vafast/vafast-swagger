@@ -1,6 +1,6 @@
 {
 	"name": "@vafast/swagger",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Plugin for Vafast for Swagger/OpenAPI documentation",
 	"type": "module",
 	"license": "MIT",
