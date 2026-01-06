@@ -1,4 +1,5 @@
 import type { Middleware } from 'vafast'
+import { html as htmlResponse, json } from 'vafast'
 
 // 简化的 OpenAPI 类型定义
 interface OpenAPIInfo {
@@ -192,7 +193,7 @@ export const swagger = <Path extends string = '/swagger'>({
 
 		// 处理 Swagger UI 页面
 		if (url.pathname === path) {
-			const html =
+			const htmlContent =
 				provider === 'swagger-ui'
 					? renderSwaggerUI(
 							documentation.info || {},
@@ -208,26 +209,14 @@ export const swagger = <Path extends string = '/swagger'>({
 							scalarCDN
 					  )
 
-			return Promise.resolve(
-				new Response(html, {
-					headers: {
-						'content-type': 'text/html; charset=utf8'
-					}
-				})
-			)
+			return Promise.resolve(htmlResponse(htmlContent))
 		}
 
 		// 处理 OpenAPI 规范
 		if (url.pathname === specPath) {
 			const spec = createOpenAPISpec(documentation)
 
-			return Promise.resolve(
-				new Response(JSON.stringify(spec, null, 2), {
-					headers: {
-						'content-type': 'application/json'
-					}
-				})
-			)
+			return Promise.resolve(json(spec))
 		}
 
 		// 继续处理其他请求

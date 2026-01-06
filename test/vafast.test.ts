@@ -1,5 +1,6 @@
-import { Server, createRouteHandler } from 'vafast'
+import { Server, createHandler, json } from 'vafast'
 import { swagger } from '../src/index'
+import { describe, expect, it } from 'vitest'
 
 describe('Vafast Swagger Plugin', () => {
 	it('should create swagger middleware', () => {
@@ -27,7 +28,7 @@ describe('Vafast Swagger Plugin', () => {
 			{
 				method: 'GET',
 				path: '/',
-				handler: createRouteHandler(() => {
+				handler: createHandler(() => {
 					return 'Hello, API!'
 				})
 			}
@@ -58,7 +59,7 @@ describe('Vafast Swagger Plugin', () => {
 			{
 				method: 'GET',
 				path: '/',
-				handler: createRouteHandler(() => {
+				handler: createHandler(() => {
 					return 'Hello, API!'
 				})
 			}
@@ -176,8 +177,8 @@ describe('Vafast Swagger Plugin', () => {
 			{
 				method: 'GET',
 				path: '/',
-				handler: createRouteHandler(() => {
-					return { message: 'Hello, API!' }
+				handler: createHandler(() => {
+					return json({ message: 'Hello, API!' })
 				})
 			}
 		])
@@ -301,15 +302,15 @@ describe('Vafast Swagger Plugin', () => {
 			{
 				method: 'GET',
 				path: '/',
-				handler: createRouteHandler(() => {
-					return { method: 'GET' }
+				handler: createHandler(() => {
+					return json({ method: 'GET' })
 				})
 			},
 			{
 				method: 'POST',
 				path: '/',
-				handler: createRouteHandler(() => {
-					return { method: 'POST' }
+				handler: createHandler(() => {
+					return json({ method: 'POST' })
 				})
 			}
 		])
