@@ -5,7 +5,7 @@ Plugin for [Vafast](https://github.com/vafastjs/vafast) to auto-generate Swagger
 ## Installation
 
 ```bash
-bun add @vafast/swagger
+npm install @vafast/swagger
 # or
 npm install @vafast/swagger
 ```
