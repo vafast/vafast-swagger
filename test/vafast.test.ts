@@ -1,4 +1,4 @@
-import { Server, createHandler, json } from 'vafast'
+import { Server, defineRoute, defineRoutes, json } from 'vafast'
 import { swagger } from '../src/index'
 import { describe, expect, it } from 'vitest'
 
@@ -24,15 +24,15 @@ describe('Vafast Swagger Plugin', () => {
 			path: '/docs'
 		})
 
-		const app = new Server([
-			{
-				method: 'GET',
-				path: '/',
-				handler: createHandler(() => {
-					return 'Hello, API!'
+		const app = new Server(
+			defineRoutes([
+				defineRoute({
+					method: 'GET',
+					path: '/',
+					handler: () => 'Hello, API!'
 				})
-			}
-		])
+			])
+		)
 
 		// 应用中间件
 		const wrappedFetch = (req: Request) => {
@@ -55,15 +55,15 @@ describe('Vafast Swagger Plugin', () => {
 			specPath: '/docs/json'
 		})
 
-		const app = new Server([
-			{
-				method: 'GET',
-				path: '/',
-				handler: createHandler(() => {
-					return 'Hello, API!'
+		const app = new Server(
+			defineRoutes([
+				defineRoute({
+					method: 'GET',
+					path: '/',
+					handler: () => 'Hello, API!'
 				})
-			}
-		])
+			])
+		)
 
 		// 应用中间件
 		const wrappedFetch = (req: Request) => {
@@ -100,7 +100,7 @@ describe('Vafast Swagger Plugin', () => {
 			}
 		})
 
-		const app = new Server([])
+		const app = new Server(defineRoutes([]))
 
 		// 应用中间件
 		const wrappedFetch = (req: Request) => {
@@ -126,7 +126,7 @@ describe('Vafast Swagger Plugin', () => {
 			version: '4.18.2'
 		})
 
-		const app = new Server([])
+		const app = new Server(defineRoutes([]))
 
 		// 应用中间件
 		const wrappedFetch = (req: Request) => {
@@ -149,7 +149,7 @@ describe('Vafast Swagger Plugin', () => {
 			specPath: '/api-docs/spec'
 		})
 
-		const app = new Server([])
+		const app = new Server(defineRoutes([]))
 
 		// 应用中间件
 		const wrappedFetch = (req: Request) => {
@@ -173,15 +173,15 @@ describe('Vafast Swagger Plugin', () => {
 			provider: 'scalar'
 		})
 
-		const app = new Server([
-			{
-				method: 'GET',
-				path: '/',
-				handler: createHandler(() => {
-					return json({ message: 'Hello, API!' })
+		const app = new Server(
+			defineRoutes([
+				defineRoute({
+					method: 'GET',
+					path: '/',
+					handler: () => json({ message: 'Hello, API!' })
 				})
-			}
-		])
+			])
+		)
 
 		// 应用中间件
 		const wrappedFetch = (req: Request) => {
@@ -202,7 +202,7 @@ describe('Vafast Swagger Plugin', () => {
 			excludeMethods: ['OPTIONS', 'HEAD']
 		})
 
-		const app = new Server([])
+		const app = new Server(defineRoutes([]))
 
 		// 应用中间件
 		const wrappedFetch = (req: Request) => {
@@ -231,7 +231,7 @@ describe('Vafast Swagger Plugin', () => {
 			excludeTags: ['Private']
 		})
 
-		const app = new Server([])
+		const app = new Server(defineRoutes([]))
 
 		// 应用中间件
 		const wrappedFetch = (req: Request) => {
@@ -256,7 +256,7 @@ describe('Vafast Swagger Plugin', () => {
 			theme: customTheme
 		})
 
-		const app = new Server([])
+		const app = new Server(defineRoutes([]))
 
 		// 应用中间件
 		const wrappedFetch = (req: Request) => {
@@ -278,7 +278,7 @@ describe('Vafast Swagger Plugin', () => {
 			autoDarkMode: true
 		})
 
-		const app = new Server([])
+		const app = new Server(defineRoutes([]))
 
 		// 应用中间件
 		const wrappedFetch = (req: Request) => {
@@ -298,22 +298,20 @@ describe('Vafast Swagger Plugin', () => {
 			provider: 'scalar'
 		})
 
-		const app = new Server([
-			{
-				method: 'GET',
-				path: '/',
-				handler: createHandler(() => {
-					return json({ method: 'GET' })
+		const app = new Server(
+			defineRoutes([
+				defineRoute({
+					method: 'GET',
+					path: '/',
+					handler: () => json({ method: 'GET' })
+				}),
+				defineRoute({
+					method: 'POST',
+					path: '/',
+					handler: () => json({ method: 'POST' })
 				})
-			},
-			{
-				method: 'POST',
-				path: '/',
-				handler: createHandler(() => {
-					return json({ method: 'POST' })
-				})
-			}
-		])
+			])
+		)
 
 		// 应用中间件
 		const wrappedFetch = (req: Request) => {
