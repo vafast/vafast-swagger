@@ -25,7 +25,6 @@ const replaceSchemaType = (schema: any, options: any) => {
 	return schema
 }
 
-// 与路由 schema 同一份 TypeBox（由 vafast 提供），避免 Kind 符号冲突
 import { Kind, type TSchema } from 'vafast'
 import type { OpenAPIV3 } from 'openapi-types'
 
